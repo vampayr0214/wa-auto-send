@@ -149,10 +149,22 @@ function queryOne(sql, params = []) {
   return result;
 }
 
-// Helper: run statement (INSERT/UPDATE/DELETE)
+// Helper: run statement (INSERT/UPDATE/DELETE) — returns lastInsertRowid for INSERTs
 function run(sql, params = []) {
   db.run(sql, params);
+  // Capture last_insert_rowid BEFORE saveDB() — db.export() resets it!
+  let lastId = 0;
+  try {
+    const stmt = db.prepare('SELECT last_insert_rowid() as id');
+    if (stmt.step()) {
+      lastId = stmt.getAsObject().id;
+    }
+    stmt.free();
+  } catch {
+    // ignore
+  }
   saveDB();
+  return lastId;
 }
 
 // --- Config helpers ---
@@ -203,10 +215,8 @@ function getContactCount(search) {
 
 function addContact(phone, name = '', custom1 = '', custom2 = '') {
   try {
-    run('INSERT OR IGNORE INTO contacts (phone, name, custom1, custom2) VALUES (?, ?, ?, ?)', [phone, name, custom1, custom2]);
-    // Check if actually inserted
-    const row = queryOne('SELECT last_insert_rowid() as id');
-    return { changes: row.id > 0 ? 1 : 0, lastInsertRowid: row.id };
+    const id = run('INSERT OR IGNORE INTO contacts (phone, name, custom1, custom2) VALUES (?, ?, ?, ?)', [phone, name, custom1, custom2]);
+    return { changes: id > 0 ? 1 : 0, lastInsertRowid: id };
   } catch (e) {
     return { changes: 0, lastInsertRowid: 0 };
   }
@@ -240,9 +250,8 @@ function addTemplate(name, content, isDefault = 0) {
   if (isDefault) {
     run('UPDATE templates SET is_default = 0 WHERE is_default = 1');
   }
-  run('INSERT INTO templates (name, content, is_default) VALUES (?, ?, ?)', [name, content, isDefault]);
-  const row = queryOne('SELECT last_insert_rowid() as id');
-  return { lastInsertRowid: row.id };
+  const id = run('INSERT INTO templates (name, content, is_default) VALUES (?, ?, ?)', [name, content, isDefault]);
+  return { lastInsertRowid: id };
 }
 
 function updateTemplate(id, name, content, isDefault = 0) {
@@ -367,9 +376,8 @@ function getUserCount() {
 }
 
 function createUser(email, passwordHash, name, role = 'user') {
-  run('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)', [email, passwordHash, name, role]);
-  const row = queryOne('SELECT last_insert_rowid() as id');
-  return { id: row.id };
+  const id = run('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)', [email, passwordHash, name, role]);
+  return { id };
 }
 
 function updateLastLogin(userId) {
