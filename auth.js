@@ -130,7 +130,7 @@ function setupAuthRoutes(app, rateLimit) {
 
       logger.info(`User registered: ${email} (role: ${role})`);
 
-      res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('token', token, { httpOnly: false, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
       res.json({
         success: true,
         token,
@@ -173,7 +173,7 @@ function setupAuthRoutes(app, rateLimit) {
 
       logger.info(`User logged in: ${email}`);
 
-      res.cookie('token', token, { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 });
+      res.cookie('token', token, { httpOnly: false, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: 'lax' });
       res.json({
         success: true,
         token,

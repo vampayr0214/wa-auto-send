@@ -449,6 +449,12 @@ app.get('/api/logs/export', (req, res) => {
   res.send(csv);
 });
 
+// API: Get config
+app.get('/api/config', (req, res) => {
+  const config = db.getConfig();
+  res.json(config);
+});
+
 // API: Update config
 app.post('/api/config', (req, res) => {
   const updates = req.body;
@@ -456,6 +462,18 @@ app.post('/api/config', (req, res) => {
     db.setConfig(key, value);
   }
   res.json({ success: true });
+});
+
+// API: WhatsApp connect (REST fallback for Socket.IO wa:init)
+app.post('/api/wa/connect', async (req, res) => {
+  try {
+    wa.initialize(req.user.id).catch(err => {
+      logger.error(`[WA] Init error for user ${req.user.id}: ${err.message}`);
+    });
+    res.json({ success: true, message: 'WhatsApp initialization started' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // API: WhatsApp disconnect

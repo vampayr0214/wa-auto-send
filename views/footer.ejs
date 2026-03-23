@@ -3,10 +3,13 @@
 </div>
 
 <script>
-  // Get JWT token from cookie
+  // Get JWT token from cookie or localStorage
   function getToken() {
+    // Try cookie first
     const match = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
-    return match ? match[1] : localStorage.getItem('wa_token');
+    if (match) return match[1];
+    // Fallback to localStorage
+    return localStorage.getItem('wa_token');
   }
 
   // Socket.IO client with JWT auth
