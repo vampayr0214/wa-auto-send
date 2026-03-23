@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  wa-auto:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - CHROME_PATH=/usr/bin/chromium
+    restart: unless-stopped

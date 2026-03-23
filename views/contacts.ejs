@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts — WA Auto Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <span class="text-lg font-bold text-green-400">WA Auto Send</span>
+    <button id="navToggle" class="text-gray-300 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <%- include('header') %>
+
+  <h1 class="text-2xl font-bold mb-6">Contacts</h1>
+
+  <!-- CSV Upload -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Upload CSV</h2>
+    <div id="dropZone" class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-green-400 transition-colors cursor-pointer">
+      <p class="text-gray-400 mb-2">Drag & drop CSV file here, or click to browse</p>
+      <p class="text-xs text-gray-500">Columns: phone, name, custom1, custom2</p>
+      <input type="file" id="csvInput" accept=".csv" class="hidden">
+    </div>
+    <div id="uploadResult" class="mt-4 hidden"></div>
+  </div>
+
+  <!-- Add Single Contact -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Add Contact</h2>
+    <form id="addContactForm" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <input type="text" name="phone" placeholder="Phone *" required class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      <input type="text" name="name" placeholder="Name" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      <input type="text" name="custom1" placeholder="Custom 1" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      <input type="text" name="custom2" placeholder="Custom 2" class="bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium">Add</button>
+    </form>
+  </div>
+
+  <!-- Search -->
+  <div class="mb-4">
+    <form method="GET" action="/contacts" class="flex gap-3">
+      <input type="text" name="search" value="<%= search %>" placeholder="Search contacts..." class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">Search</button>
+      <% if (search) { %>
+        <a href="/contacts" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Clear</a>
+      <% } %>
+    </form>
+  </div>
+
+  <!-- Contact List -->
+  <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center">
+      <span class="text-gray-400 text-sm"><%= totalCount %> contacts</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-750">
+          <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+            <th class="px-4 py-3">Phone</th>
+            <th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">Custom 1</th>
+            <th class="px-4 py-3">Custom 2</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (contacts.length === 0) { %>
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No contacts found</td></tr>
+          <% } %>
+          <% contacts.forEach(c => { %>
+            <tr class="border-b border-gray-700 hover:bg-gray-750">
+              <td class="px-4 py-3 font-mono"><%= c.phone %></td>
+              <td class="px-4 py-3"><%= c.name || '-' %></td>
+              <td class="px-4 py-3"><%= c.custom1 || '-' %></td>
+              <td class="px-4 py-3"><%= c.custom2 || '-' %></td>
+              <td class="px-4 py-3">
+                <% if (c.sent) { %>
+                  <span class="px-2 py-1 rounded-full text-xs bg-green-900 text-green-300">Sent</span>
+                <% } else { %>
+                  <span class="px-2 py-1 rounded-full text-xs bg-yellow-900 text-yellow-300">Unsent</span>
+                <% } %>
+              </td>
+              <td class="px-4 py-3">
+                <button onclick="deleteContact(<%= c.id %>)" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <% if (totalPages > 1) { %>
+    <div class="flex justify-center gap-2 mt-6">
+      <% for (let i = 1; i <= totalPages; i++) { %>
+        <a href="/contacts?page=<%= i %><%= search ? '&search=' + encodeURIComponent(search) : '' %>"
+           class="px-3 py-1 rounded <%= i === page ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600' %>">
+          <%= i %>
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+
+  <%- include('footer') %>
+
+  <script>
+    // Drop zone
+    const dropZone = document.getElementById('dropZone');
+    const csvInput = document.getElementById('csvInput');
+
+    dropZone.addEventListener('click', () => csvInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-green-400'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-green-400'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-green-400');
+      if (e.dataTransfer.files.length) uploadCSV(e.dataTransfer.files[0]);
+    });
+    csvInput.addEventListener('change', () => { if (csvInput.files.length) uploadCSV(csvInput.files[0]); });
+
+    function uploadCSV(file) {
+      const formData = new FormData();
+      formData.append('csv', file);
+      const resultDiv = document.getElementById('uploadResult');
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = '<p class="text-gray-400">Uploading...</p>';
+
+      fetch('/api/contacts/upload', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            resultDiv.innerHTML = `<div class="bg-green-900 text-green-300 p-3 rounded-lg">✅ Added ${data.added} contacts (${data.skipped} duplicates skipped)</div>`;
+            setTimeout(() => location.reload(), 1500);
+          } else {
+            resultDiv.innerHTML = `<div class="bg-red-900 text-red-300 p-3 rounded-lg">❌ ${data.error}</div>`;
+          }
+        })
+        .catch(err => {
+          resultDiv.innerHTML = `<div class="bg-red-900 text-red-300 p-3 rounded-lg">❌ Upload failed: ${err.message}</div>`;
+        });
+    }
+
+    // Add contact form
+    document.getElementById('addContactForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        phone: form.phone.value,
+        name: form.name.value,
+        custom1: form.custom1.value,
+        custom2: form.custom2.value,
+      };
+
+      fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert(result.error);
+          }
+        });
+    });
+
+    function deleteContact(id) {
+      if (!confirm('Delete this contact?')) return;
+      fetch('/api/contacts/' + id, { method: 'DELETE' })
+        .then(() => location.reload());
+    }
+  </script>
+</body>
+</html>

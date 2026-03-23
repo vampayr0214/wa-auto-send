@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — WA Auto Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <span class="text-lg font-bold text-green-400">WA Auto Send</span>
+    <button id="navToggle" class="text-gray-300 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <%- include('header') %>
+
+  <h1 class="text-2xl font-bold mb-6">Settings</h1>
+
+  <!-- Config Form -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Send Configuration</h2>
+    <form id="configForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Daily Limit</label>
+        <input type="number" name="daily_limit" value="<%= config.daily_limit || 100 %>" min="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Min Delay (seconds)</label>
+        <input type="number" name="min_delay_sec" value="<%= config.min_delay_sec || 45 %>" min="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Max Delay (seconds)</label>
+        <input type="number" name="max_delay_sec" value="<%= config.max_delay_sec || 90 %>" min="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Batch Pause After (messages)</label>
+        <input type="number" name="batch_pause_after" value="<%= config.batch_pause_after || 10 %>" min="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Batch Pause Min (seconds)</label>
+        <input type="number" name="batch_pause_min_sec" value="<%= config.batch_pause_min_sec || 180 %>" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Batch Pause Max (seconds)</label>
+        <input type="number" name="batch_pause_max_sec" value="<%= config.batch_pause_max_sec || 300 %>" min="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm text-gray-400">
+          <input type="checkbox" name="typing_simulation" <%= config.typing_simulation !== false ? 'checked' : '' %> class="rounded">
+          Typing Simulation
+        </label>
+      </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm text-gray-400">
+          <input type="checkbox" name="headless" <%= config.headless !== false ? 'checked' : '' %> class="rounded">
+          Headless Mode
+        </label>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm text-gray-400 mb-1">Chrome Path</label>
+        <input type="text" name="chrome_path" value="<%= config.chrome_path || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' %>" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white font-mono text-sm focus:outline-none focus:border-green-400">
+      </div>
+      <div class="sm:col-span-2">
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-medium">Save Settings</button>
+        <span id="saveStatus" class="ml-4 text-sm text-gray-400 hidden">Saved!</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- WhatsApp Session -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <h2 class="text-lg font-semibold mb-4">WhatsApp Session</h2>
+    <div class="flex items-center gap-4 mb-4">
+      <div class="flex items-center gap-2 px-4 py-2 rounded-full <%= waStatus.connected ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300' %>">
+        <span class="w-3 h-3 rounded-full <%= waStatus.connected ? 'bg-green-400' : 'bg-red-400' %>"></span>
+        <span><%= waStatus.connected ? 'Connected' : 'Disconnected' %></span>
+      </div>
+      <% if (waStatus.sessionActive) { %>
+        <span class="text-xs text-gray-500">Session active</span>
+      <% } %>
+    </div>
+    <div class="flex gap-3">
+      <button onclick="waDisconnect()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+        🔌 Disconnect
+      </button>
+      <button onclick="waClearSession()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+        🗑 Clear Session
+      </button>
+    </div>
+  </div>
+
+  <%- include('footer') %>
+
+  <script>
+    document.getElementById('configForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {};
+      const inputs = form.querySelectorAll('input[name]');
+
+      inputs.forEach(input => {
+        if (input.type === 'checkbox') {
+          data[input.name] = input.checked;
+        } else {
+          data[input.name] = input.value;
+        }
+      });
+
+      fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) {
+            const status = document.getElementById('saveStatus');
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 2000);
+          }
+        });
+    });
+
+    function waDisconnect() {
+      if (!confirm('Disconnect WhatsApp session?')) return;
+      fetch('/api/wa/disconnect', { method: 'POST' })
+        .then(r => r.json())
+        .then(() => location.reload());
+    }
+
+    function waClearSession() {
+      if (!confirm('This will clear the WhatsApp session completely. You will need to re-scan QR. Continue?')) return;
+      fetch('/api/wa/clear-session', { method: 'POST' })
+        .then(r => r.json())
+        .then(() => location.reload());
+    }
+  </script>
+</body>
+</html>

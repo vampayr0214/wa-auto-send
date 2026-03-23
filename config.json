@@ -1,0 +1,11 @@
+{
+  "daily_limit": 100,
+  "min_delay_sec": 45,
+  "max_delay_sec": 90,
+  "batch_pause_after": 10,
+  "batch_pause_min_sec": 180,
+  "batch_pause_max_sec": 300,
+  "typing_simulation": true,
+  "headless": true,
+  "chrome_path": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+}

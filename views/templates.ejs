@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Templates — WA Auto Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <span class="text-lg font-bold text-green-400">WA Auto Send</span>
+    <button id="navToggle" class="text-gray-300 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <%- include('header') %>
+
+  <h1 class="text-2xl font-bold mb-6">Templates</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Template Editor -->
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <h2 class="text-lg font-semibold mb-4" id="editorTitle">New Template</h2>
+      <form id="templateForm">
+        <input type="hidden" id="templateId" value="">
+        <div class="mb-4">
+          <label class="block text-sm text-gray-400 mb-1">Template Name</label>
+          <input type="text" id="templateName" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400" placeholder="My Template">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm text-gray-400 mb-1">Message Content</label>
+          <div class="flex flex-wrap gap-2 mb-2">
+            <button type="button" onclick="insertPlaceholder('{name}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">{'{name}'}</button>
+            <button type="button" onclick="insertPlaceholder('{phone}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">{'{phone}'}</button>
+            <button type="button" onclick="insertPlaceholder('{custom1}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">{'{custom1}'}</button>
+            <button type="button" onclick="insertPlaceholder('{custom2}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded">{'{custom2}'}</button>
+          </div>
+          <textarea id="templateContent" rows="6" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400 font-mono" placeholder="Hi {name}, welcome to our service!"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="flex items-center gap-2 text-sm text-gray-400">
+            <input type="checkbox" id="templateDefault" class="rounded">
+            Set as default template
+          </label>
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium">Save Template</button>
+          <button type="button" onclick="resetForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2 rounded-lg">Clear</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Live Preview -->
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <h2 class="text-lg font-semibold mb-4">Live Preview</h2>
+      <div class="mb-4">
+        <label class="block text-sm text-gray-400 mb-1">Preview with contact:</label>
+        <select id="previewContact" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-400">
+          <option value="sample">Sample Data</option>
+          <% sampleContacts.forEach(c => { %>
+            <option value="<%= c.id %>" data-phone="<%= c.phone %>" data-name="<%= c.name %>" data-custom1="<%= c.custom1 %>" data-custom2="<%= c.custom2 %>">
+              <%= c.name || c.phone %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div id="previewBox" class="bg-gray-700 rounded-lg p-4 min-h-32 whitespace-pre-wrap text-gray-200">
+        Enter a template to see preview...
+      </div>
+    </div>
+  </div>
+
+  <!-- Existing Templates -->
+  <div class="bg-gray-800 rounded-lg border border-gray-700 mt-6 overflow-hidden">
+    <div class="p-4 border-b border-gray-700">
+      <h2 class="text-lg font-semibold">Saved Templates</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+            <th class="px-4 py-3">Name</th>
+            <th class="px-4 py-3">Content</th>
+            <th class="px-4 py-3">Default</th>
+            <th class="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (templates.length === 0) { %>
+            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No templates yet</td></tr>
+          <% } %>
+          <% templates.forEach(t => { %>
+            <tr class="border-b border-gray-700 hover:bg-gray-750">
+              <td class="px-4 py-3 font-medium"><%= t.name %></td>
+              <td class="px-4 py-3 text-gray-400 text-sm truncate max-w-xs"><%= t.content.substring(0, 80) %><%= t.content.length > 80 ? '...' : '' %></td>
+              <td class="px-4 py-3">
+                <% if (t.is_default) { %>
+                  <span class="px-2 py-1 rounded-full text-xs bg-green-900 text-green-300">Default</span>
+                <% } %>
+              </td>
+              <td class="px-4 py-3 flex gap-2">
+                <button onclick="editTemplate(<%= t.id %>, '<%= t.name.replace(/'/g, "\\'") %>', `<%= t.content.replace(/`/g, "\\`").replace(/\$/g, "\\$") %>`, <%= t.is_default %>)" class="text-blue-400 hover:text-blue-300 text-sm">Edit</button>
+                <button onclick="deleteTemplate(<%= t.id %>)" class="text-red-400 hover:text-red-300 text-sm">Delete</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%- include('footer') %>
+
+  <script>
+    const templateContent = document.getElementById('templateContent');
+    const previewBox = document.getElementById('previewBox');
+
+    function insertPlaceholder(placeholder) {
+      const start = templateContent.selectionStart;
+      const end = templateContent.selectionEnd;
+      const text = templateContent.value;
+      templateContent.value = text.substring(0, start) + placeholder + text.substring(end);
+      templateContent.selectionStart = templateContent.selectionEnd = start + placeholder.length;
+      templateContent.focus();
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const content = templateContent.value;
+      const sel = document.getElementById('previewContact');
+      const opt = sel.options[sel.selectedIndex];
+
+      let name, phone, custom1, custom2;
+      if (opt.value === 'sample') {
+        name = 'John Doe'; phone = '9876543210'; custom1 = 'Mumbai'; custom2 = 'Acme Corp';
+      } else {
+        name = opt.dataset.name || ''; phone = opt.dataset.phone || '';
+        custom1 = opt.dataset.custom1 || ''; custom2 = opt.dataset.custom2 || '';
+      }
+
+      const preview = content
+        .replace(/\{name\}/g, name)
+        .replace(/\{phone\}/g, phone)
+        .replace(/\{custom1\}/g, custom1)
+        .replace(/\{custom2\}/g, custom2);
+
+      previewBox.textContent = preview || 'Enter a template to see preview...';
+    }
+
+    templateContent.addEventListener('input', updatePreview);
+    document.getElementById('previewContact').addEventListener('change', updatePreview);
+
+    function resetForm() {
+      document.getElementById('templateId').value = '';
+      document.getElementById('templateName').value = '';
+      document.getElementById('templateContent').value = '';
+      document.getElementById('templateDefault').checked = false;
+      document.getElementById('editorTitle').textContent = 'New Template';
+      updatePreview();
+    }
+
+    function editTemplate(id, name, content, isDefault) {
+      document.getElementById('templateId').value = id;
+      document.getElementById('templateName').value = name;
+      document.getElementById('templateContent').value = content;
+      document.getElementById('templateDefault').checked = isDefault;
+      document.getElementById('editorTitle').textContent = 'Edit Template';
+      updatePreview();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteTemplate(id) {
+      if (!confirm('Delete this template?')) return;
+      fetch('/api/templates/' + id, { method: 'DELETE' })
+        .then(() => location.reload());
+    }
+
+    document.getElementById('templateForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('templateId').value;
+      const data = {
+        name: document.getElementById('templateName').value,
+        content: document.getElementById('templateContent').value,
+        is_default: document.getElementById('templateDefault').checked,
+      };
+
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? '/api/templates/' + id : '/api/templates';
+
+      fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+        .then(r => r.json())
+        .then(result => {
+          if (result.success) location.reload();
+          else alert(result.error);
+        });
+    });
+  </script>
+</body>
+</html>

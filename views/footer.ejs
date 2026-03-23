@@ -1,0 +1,109 @@
+    </div>
+  </main>
+</div>
+
+<script>
+  // Get JWT token from cookie
+  function getToken() {
+    const match = document.cookie.match(/(?:^|;\s*)token=([^;]*)/);
+    return match ? match[1] : localStorage.getItem('wa_token');
+  }
+
+  // Socket.IO client with JWT auth
+  const token = getToken();
+  const socket = io({
+    auth: { token: token },
+    query: { token: token }
+  });
+
+  // Mobile nav toggle
+  document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('navToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('navOverlay');
+
+    if (toggle && sidebar && overlay) {
+      toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      });
+    }
+  });
+
+  // WhatsApp status listener
+  socket.on('wa:status', (data) => {
+    const badges = document.querySelectorAll('#waStatusBadge');
+    const texts = document.querySelectorAll('#waStatusText');
+    const dots = document.querySelectorAll('#waDot');
+    const qrSections = document.querySelectorAll('#qrSection, #qrContainer');
+
+    badges.forEach(badge => {
+      badge.className = badge.className.replace(
+        /bg-\w+-900 text-\w+-300/g,
+        data.connected ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'
+      );
+    });
+
+    texts.forEach(text => {
+      text.textContent = data.connected ? 'Connected' : 'Disconnected';
+    });
+
+    dots.forEach(dot => {
+      dot.className = dot.className.replace(
+        /bg-\w+-400/g,
+        data.connected ? 'bg-green-400' : 'bg-red-400'
+      );
+    });
+
+    qrSections.forEach(section => {
+      if (data.connected) {
+        section.classList.add('hidden');
+      } else {
+        section.classList.remove('hidden');
+      }
+    });
+  });
+
+  socket.on('wa:qr', (dataUrl) => {
+    const displays = document.querySelectorAll('#qrDisplay');
+    displays.forEach(display => {
+      display.innerHTML = `<img src="${dataUrl}" alt="QR Code" class="w-64 h-64">`;
+    });
+  });
+
+  // Initialize WhatsApp
+  function waInit() {
+    socket.emit('wa:init');
+    const displays = document.querySelectorAll('#qrDisplay');
+    displays.forEach(display => {
+      display.innerHTML = '<div class="w-64 h-64 flex items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div></div>';
+    });
+  }
+
+  // Request status on load
+  socket.on('connect', () => {
+    socket.emit('wa:status_request');
+  });
+
+  // Logout function
+  function logout() {
+    if (!confirm('Are you sure you want to logout?')) return;
+    fetch('/api/auth/logout', { method: 'POST' })
+      .then(() => {
+        localStorage.removeItem('wa_token');
+        window.location.href = '/login';
+      })
+      .catch(() => {
+        localStorage.removeItem('wa_token');
+        window.location.href = '/login';
+      });
+  }
+</script>
+<script src="/js/app.js"></script>
+</body>
+</html>

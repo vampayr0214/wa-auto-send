@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> — WA Auto Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <!-- Mobile nav toggle -->
+  <div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <span class="text-lg font-bold text-green-400">WA Auto Send</span>
+    <button id="navToggle" class="text-gray-300 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-64 bg-gray-800 border-r border-gray-700 transform -translate-x-full md:translate-x-0 transition-transform duration-200">
+      <div class="p-6 border-b border-gray-700">
+        <h1 class="text-xl font-bold text-green-400">WA Auto Send</h1>
+        <p class="text-xs text-gray-500 mt-1">Bulk Messaging Dashboard</p>
+      </div>
+      <ul class="py-4">
+        <li><a href="/" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Dashboard' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">📊</span> Dashboard
+        </a></li>
+        <li><a href="/contacts" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Contacts' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">👥</span> Contacts
+        </a></li>
+        <li><a href="/templates" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Templates' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">📝</span> Templates
+        </a></li>
+        <li><a href="/send" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Send Messages' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">📤</span> Send
+        </a></li>
+        <li><a href="/logs" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Sent Logs' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">📋</span> Logs
+        </a></li>
+        <li><a href="/settings" class="flex items-center px-6 py-3 hover:bg-gray-700 <%= title === 'Settings' ? 'bg-gray-700 border-l-4 border-green-400' : '' %>">
+          <span class="mr-3">⚙️</span> Settings
+        </a></li>
+      </ul>
+    </nav>
+
+    <!-- Overlay -->
+    <div id="navOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+
+    <!-- Main content -->
+    <main class="flex-1 md:ml-0 pt-16 md:pt-0 min-h-screen">
+      <div class="p-4 md:p-8">
+        <%- body %>
+      </div>
+    </main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

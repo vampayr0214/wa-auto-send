@@ -1,0 +1,117 @@
+/* WA Auto Send - Custom Styles */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Input focus glow */
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* QR code animation */
+@keyframes pulse-qr {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+#qrDisplay img {
+  animation: pulse-qr 2s ease-in-out infinite;
+}
+
+/* Table hover effect */
+tbody tr:hover {
+  background-color: rgba(55, 65, 81, 0.5);
+}
+
+/* Progress bar animation */
+#progressBar {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Message log entry animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#logContainer > div {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Status badge pulse */
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+.bg-green-900 {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+/* Drop zone hover effect */
+#dropZone:hover {
+  border-color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+/* Responsive table wrapper */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Nav transition */
+#sidebar {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.15s ease-in-out;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* Card hover effect */
+.bg-gray-800 {
+  transition: border-color 0.2s ease;
+}
+
+.bg-gray-800:hover {
+  border-color: #4b5563;
+}
+
+/* Green border on active cards */
+.border-green-400 {
+  border-color: #4ade80 !important;
+}

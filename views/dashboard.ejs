@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — WA Auto Send</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <div class="md:hidden fixed top-0 left-0 right-0 z-50 bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
+    <span class="text-lg font-bold text-green-400">WA Auto Send</span>
+    <button id="navToggle" class="text-gray-300 hover:text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <%- include('header') %>
+
+  <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div class="text-gray-400 text-sm">Total Contacts</div>
+      <div class="text-3xl font-bold mt-2"><%= totalContacts %></div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div class="text-gray-400 text-sm">Sent Today</div>
+      <div class="text-3xl font-bold text-green-400 mt-2"><%= sentToday %></div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div class="text-gray-400 text-sm">Remaining Today</div>
+      <div class="text-3xl font-bold text-yellow-400 mt-2"><%= remainingToday %></div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+      <div class="text-gray-400 text-sm">Success Rate</div>
+      <div class="text-3xl font-bold text-blue-400 mt-2"><%= successRate %>%</div>
+    </div>
+  </div>
+
+  <!-- WhatsApp Status -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-8">
+    <h2 class="text-lg font-semibold mb-4">WhatsApp Status</h2>
+    <div class="flex items-center gap-4 mb-4">
+      <div id="waStatusBadge" class="flex items-center gap-2 px-4 py-2 rounded-full <%= waStatus.connected ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300' %>">
+        <span class="w-3 h-3 rounded-full <%= waStatus.connected ? 'bg-green-400' : 'bg-red-400' %>"></span>
+        <span id="waStatusText"><%= waStatus.connected ? 'Connected' : 'Disconnected' %></span>
+      </div>
+    </div>
+    <div id="qrContainer" class="<%= waStatus.connected ? 'hidden' : '' %>">
+      <p class="text-gray-400 mb-3">Scan QR code to connect:</p>
+      <div id="qrDisplay" class="bg-white p-4 rounded-lg inline-block">
+        <% if (waStatus.qr) { %>
+          <img src="<%= waStatus.qr %>" alt="QR Code" class="w-64 h-64">
+        <% } else { %>
+          <div class="w-64 h-64 flex items-center justify-center text-gray-500">
+            <button onclick="waInit()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium">
+              Connect WhatsApp
+            </button>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
+    <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-3">
+      <a href="/contacts" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium">
+        📂 Upload CSV
+      </a>
+      <a href="/send" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg font-medium">
+        📤 Start Send
+      </a>
+      <a href="/logs" class="bg-gray-600 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg font-medium">
+        📋 View Logs
+      </a>
+    </div>
+  </div>
+
+  <%- include('footer') %>
+</body>
+</html>
