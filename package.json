@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop wa-auto-send"
+    "pm2:stop": "pm2 stop wa-auto-send",
+    "postinstall": "node postinstall-patch.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -24,7 +25,7 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.8.1",
     "sql.js": "^1.11.0",
-    "whatsapp-web.js": "^1.26.0",
+    "whatsapp-web.js": "^1.34.6",
     "winston": "^3.17.0"
   }
 }
