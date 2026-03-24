@@ -1,42 +1,29 @@
 /**
- * WhatsApp Manager — Stealth via require.cache manipulation
+ * WhatsApp Manager — Stealth + Navigation-Safe
  * 
- * Strategy: Pre-load puppeteer-extra into require.cache under the puppeteer key
- * BEFORE whatsapp-web.js is imported. This ensures whatsapp-web.js gets
- * puppeteer-extra when it does require('puppeteer').
+ * Strategy:
+ * 1. Inject puppeteer-extra into require.cache (stealth plugin)
+ * 2. After client creation, monkey-patch pupPage.evaluate to retry on navigation errors
  */
 const path = require('path');
 const fs = require('fs');
 
-// Step 1: Load puppeteer-extra with stealth
+// Step 1: Stealth injection via require.cache
 const puppeteerExtra = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteerExtra.use(StealthPlugin());
 
-// Step 2: Find where real puppeteer would resolve to, then cache puppeteer-extra there
-// Try multiple approaches to find the puppeteer module path
 let puppeteerRealPath;
 try {
-  // Try resolving from whatsapp-web.js (where it will actually be required from)
   const wwebPath = require.resolve('whatsapp-web.js');
   const wwebDir = path.dirname(wwebPath);
   puppeteerRealPath = require.resolve('puppeteer', { paths: [wwebDir] });
 } catch {
-  try {
-    puppeteerRealPath = require.resolve('puppeteer');
-  } catch {
-    // If puppeteer isn't installed, create a fake path
-    puppeteerRealPath = path.join(__dirname, 'node_modules', 'puppeteer', 'lib', 'cjs', 'puppeteer', 'puppeteer.js');
-  }
+  try { puppeteerRealPath = require.resolve('puppeteer'); }
+  catch { puppeteerRealPath = path.join(__dirname, 'node_modules', 'puppeteer', 'lib', 'cjs', 'puppeteer', 'puppeteer.js'); }
 }
-require.cache[puppeteerRealPath] = {
-  id: puppeteerRealPath,
-  filename: puppeteerRealPath,
-  loaded: true,
-  exports: puppeteerExtra,
-};
+require.cache[puppeteerRealPath] = { id: puppeteerRealPath, filename: puppeteerRealPath, loaded: true, exports: puppeteerExtra };
 
-// Step 3: Now load whatsapp-web.js — it will use our cached puppeteer-extra
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const QRCode = require('qrcode');
 let logger;
@@ -86,6 +73,32 @@ class WhatsAppManager {
     return chromePath;
   }
 
+  _patchPageNavigation(page) {
+    // Wrap evaluate to handle navigation errors
+    const origEval = page.evaluate.bind(page);
+    const patchedEval = async (fn, ...args) => {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        try {
+          return await origEval(fn, ...args);
+        } catch (err) {
+          if (err.message && (
+            err.message.includes('Execution context was destroyed') ||
+            err.message.includes('Cannot find context') ||
+            err.message.includes('Protocol error')
+          )) {
+            if (attempt < 7) {
+              logger.info(`[WA] Navigation retry ${attempt + 1}/8 for evaluate`);
+              await new Promise(r => setTimeout(r, 1500 + attempt * 500));
+              continue;
+            }
+          }
+          throw err;
+        }
+      }
+    };
+    page.evaluate = patchedEval;
+  }
+
   async initialize(userId) {
     const state = this._getClientState(userId);
     if (state.client) return;
@@ -117,8 +130,15 @@ class WhatsAppManager {
       takeoverTimeoutMs: 10000,
     });
 
+    // Patch pupPage.evaluate after browser launches but before inject runs
     state.client.on('qr', async (qr) => {
       logger.info(`[WA] QR Code received for user ${userId}`);
+      // Patch the page when first QR arrives (page is available at this point)
+      if (state.client.pupPage && !state.client.pupPage._navPatched) {
+        this._patchPageNavigation(state.client.pupPage);
+        state.client.pupPage._navPatched = true;
+        logger.info(`[WA] Navigation safety patch applied for user ${userId}`);
+      }
       try {
         const dataUrl = await QRCode.toDataURL(qr, { width: 300, margin: 2 });
         state.qrCode = dataUrl;
@@ -136,8 +156,14 @@ class WhatsAppManager {
       this.emit('wa:status', { connected: true, qr: null, sessionActive: true }, userId);
     });
 
+    // Patch the page as soon as authenticated (before inject continues post-nav)
     state.client.on('authenticated', () => {
       logger.info(`[WA] Authenticated for user ${userId}`);
+      // Re-patch after auth since page context may have changed
+      if (state.client.pupPage) {
+        this._patchPageNavigation(state.client.pupPage);
+        logger.info(`[WA] Navigation patch re-applied after auth for user ${userId}`);
+      }
       state.sessionActive = true;
       this.emit('wa:status', { connected: state.connected, qr: state.qrCode, sessionActive: true }, userId);
     });
