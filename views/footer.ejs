@@ -81,16 +81,63 @@
   });
 
   // Initialize WhatsApp
+  let waPollTimer = null;
   function waInit() {
-    socket.emit('wa:init');
+    // Show loading spinner
     const displays = document.querySelectorAll('#qrDisplay');
     displays.forEach(display => {
       display.innerHTML = '<div class="w-64 h-64 flex items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div></div>';
     });
+
+    // Emit via socket
+    socket.emit('wa:init');
+
+    // Start polling API as fallback (socket may disconnect during browser launch)
+    const token = getToken();
+    if (waPollTimer) clearInterval(waPollTimer);
+    waPollTimer = setInterval(async () => {
+      try {
+        const res = await fetch('/api/wa/status', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.qr) {
+          displays.forEach(d => {
+            d.innerHTML = `<img src="${data.qr}" alt="QR Code" class="w-64 h-64">`;
+          });
+        }
+        if (data.connected) {
+          if (waPollTimer) { clearInterval(waPollTimer); waPollTimer = null; }
+          // Update UI
+          const badges = document.querySelectorAll('#waStatusBadge');
+          badges.forEach(b => {
+            b.className = b.className.replace(/bg-\w+-900 text-\w+-300/g, 'bg-green-900 text-green-300');
+          });
+          const texts = document.querySelectorAll('#waStatusText');
+          texts.forEach(t => { t.textContent = 'Connected'; });
+          const dots = document.querySelectorAll('#waDot');
+          dots.forEach(d => { d.className = d.className.replace(/bg-\w+-400/g, 'bg-green-400'); });
+          // Hide QR
+          document.querySelectorAll('#qrSection, #qrContainer').forEach(s => s.classList.add('hidden'));
+        }
+      } catch (e) {}
+    }, 3000);
+
+    // Stop polling after 5 minutes
+    setTimeout(() => { if (waPollTimer) { clearInterval(waPollTimer); waPollTimer = null; } }, 300000);
   }
 
-  // Request status on load
+  // Request status on load and reconnect
   socket.on('connect', () => {
+    socket.emit('wa:status_request');
+    // If waInit was recently called, re-poll API for QR
+    if (waPollTimer) {
+      // Already polling, just request fresh status
+      socket.emit('wa:status_request');
+    }
+  });
+
+  socket.on('reconnect', () => {
     socket.emit('wa:status_request');
   });
 

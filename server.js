@@ -177,6 +177,10 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('wa:status_request', () => {
+    socket.emit('wa:status', wa.getStatus(socket.userId));
+  });
+
   socket.on('send:start', sendRateLimit, async (data) => {
     try {
       const contacts = db.getUnsentContacts(data.limit || 999);
