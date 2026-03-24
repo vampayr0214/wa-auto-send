@@ -516,6 +516,27 @@ app.post('/api/wa/init', async (req, res) => {
   }
 });
 
+// API: Send single message (REST)
+app.post('/api/wa/send', async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+    if (!phone || !message) return res.status(400).json({ error: 'Phone and message required' });
+    const state = wa._getClientState(req.user.id);
+    if (!state.connected || !state.client) return res.status(400).json({ error: 'WhatsApp not connected' });
+    const chatId = wa.formatPhone(phone);
+    const result = await state.client.sendMessage(chatId, message);
+    if (result?.id) {
+      db.addLog(phone, '', message.substring(0, 100), null, 'success');
+      res.json({ success: true, messageId: result.id._serialized });
+    } else {
+      res.status(500).json({ error: 'Failed to send' });
+    }
+  } catch (err) {
+    logger.error(`[SEND] Error: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // API: WhatsApp disconnect
 app.post('/api/wa/disconnect', async (req, res) => {
   try {
