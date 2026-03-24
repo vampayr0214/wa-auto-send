@@ -89,8 +89,14 @@
       display.innerHTML = '<div class="w-64 h-64 flex items-center justify-center"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div></div>';
     });
 
-    // Emit via socket
+    // Emit via socket (fallback)
     socket.emit('wa:init');
+
+    // Also call REST API directly (more reliable than Socket.IO)
+    fetch('/api/wa/init', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(r => r.json()).catch(e => console.log('wa/init API error:', e));
 
     // Start polling API as fallback (socket may disconnect during browser launch)
     const token = getToken();

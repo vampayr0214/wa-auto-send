@@ -505,6 +505,37 @@ app.get('/api/wa/status', (req, res) => {
   res.json(wa.getStatus(req.user.id));
 });
 
+// API: WhatsApp initialize (REST fallback for when Socket.IO disconnects)
+app.post('/api/wa/init', async (req, res) => {
+  try {
+    await wa.initialize(req.user.id);
+    res.json({ success: true, message: 'WhatsApp initialization started' });
+  } catch (err) {
+    logger.error(`[WA] Init error for user ${req.user.id}: ${err.message}`);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: WhatsApp disconnect
+app.post('/api/wa/disconnect', async (req, res) => {
+  try {
+    await wa.disconnect(req.user.id);
+    res.json({ success: true, message: 'WhatsApp disconnected' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: WhatsApp clear session
+app.post('/api/wa/clear', async (req, res) => {
+  try {
+    await wa.clearSession(req.user.id);
+    res.json({ success: true, message: 'WhatsApp session cleared' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
